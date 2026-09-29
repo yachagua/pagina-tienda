@@ -32,6 +32,9 @@ jobs:
                const coredemo = require('@actions/core')
                return await coredemo.getIDToken()
            result-encoding: string
+      # La página es HTML puro: se borran los archivos que dejó npm para que no se publiquen
+      - name: Limpiar archivos temporales de npm
+        run: rm -rf node_modules package.json package-lock.json
       - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
@@ -43,6 +46,7 @@ jobs:
           app_location: "/" # App source code path
           api_location: "" # Api source code path - optional
           output_location: "." # Built app content directory - optional
+          skip_app_build: true # HTML puro: publicar los archivos tal cual, sin compilar
           github_id_token: ${{ steps.idtoken.outputs.result }}
           ###### End of Repository/Build Configurations ######
 
