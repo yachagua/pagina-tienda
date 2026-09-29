@@ -1,7 +1,0 @@
-id,activo,nombre,equipo,marca,tipo,descripcion,precio,tallas,personalizable,imagen
-CAM-001,si,FC Barcelona local · Lamine Yamal 10,FC Barcelona,Nike,Camiseta,Camiseta local con nombre y número de Lamine Yamal,,,no,barcelona-lamine-yamal.jpg
-CAM-002,si,Real Madrid · Conjunto,Real Madrid,Adidas,Conjunto,Camiseta y pantaloneta,,,no,real-madrid-conjunto.jpg
-CAM-003,si,Manchester City · Conjunto,Manchester City,Puma,Conjunto,Camiseta y pantaloneta,,,no,manchester-city-conjunto.jpg
-CAM-004,si,Boca Juniors · Retro,Boca Juniors,Nike,Camiseta,Camiseta retro azul con franja amarilla,,,no,boca-juniors-retro.jpg
-CAM-005,si,São Paulo FC · Local,São Paulo FC,New Balance,Camiseta,Camiseta local blanca con franjas roja y negra,,,no,sao-paulo-local.jpg
-CAM-006,si,Adidas Originals · Edición especial,,Adidas,Camiseta,Camiseta negra con estampado floral en relieve,,,no,adidas-originals-negra.jpg

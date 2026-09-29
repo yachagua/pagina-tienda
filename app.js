@@ -9,17 +9,9 @@ const pesos = new Intl.NumberFormat("es-CO", {style:"currency", currency:"COP", 
 const esc = t => String(t ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
 /* FOTOS EN AZURE BLOB STORAGE
-   Las fotos se buscan en este contenedor. En la hoja basta con escribir el nombre del archivo.
-   Si una foto no está en Azure, la página la intenta en la carpeta local "imagenes". */
+   Todas las fotos se buscan en este contenedor. En la hoja basta con escribir el nombre del archivo. */
 const FOTOS_BASE = "https://stla10miafotos.blob.core.windows.net/fotos/";
 const ruta = f => /^https?:/.test(f) ? f : FOTOS_BASE + encodeURIComponent(f);
-
-document.addEventListener("error", e => {
-  const img = e.target;
-  if (img.tagName !== "IMG" || !img.src.startsWith(FOTOS_BASE) || img.dataset.intentoLocal) return;
-  img.dataset.intentoLocal = "1";
-  img.src = "imagenes/" + decodeURIComponent(img.src.slice(FOTOS_BASE.length));
-}, true);
 
 /* DESCUENTOS: la columna "descuento" acepta 20 o 20%.
    El precio final se redondea a la centena más cercana. */
