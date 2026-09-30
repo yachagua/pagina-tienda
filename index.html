@@ -80,7 +80,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css?v=7">
+<link rel="stylesheet" href="estilos.css?v=8">
 </head>
 <body>
 
@@ -163,8 +163,16 @@
             </select>
           </label>
         </div>
-        <div class="filtros" id="filtros" role="group" aria-label="Filtrar por continente"></div>
-        <div class="filtros sub" id="sub-filtros" role="group" aria-label="Filtrar por equipo" hidden></div>
+        <div class="fila-filtros">
+          <button class="flecha izq" type="button" aria-label="Ver filtros anteriores" hidden>&#8249;</button>
+          <div class="filtros" id="filtros" role="group" aria-label="Filtrar por continente"></div>
+          <button class="flecha der" type="button" aria-label="Ver más filtros" hidden>&#8250;</button>
+        </div>
+        <div class="fila-filtros" id="fila-sub" hidden>
+          <button class="flecha izq" type="button" aria-label="Ver equipos anteriores" hidden>&#8249;</button>
+          <div class="filtros sub" id="sub-filtros" role="group" aria-label="Filtrar por equipo"></div>
+          <button class="flecha der" type="button" aria-label="Ver más equipos" hidden>&#8250;</button>
+        </div>
       </div>
       <p class="resultado" id="resultado" aria-live="polite"></p>
       <div class="rejilla" id="rejilla">
@@ -294,7 +302,7 @@
 </dialog>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js" defer></script>
-<script src="app.js?v=7" defer></script>
+<script src="app.js?v=8" defer></script>
 </body>
 
 </html>

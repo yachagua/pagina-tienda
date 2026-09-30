@@ -71,7 +71,7 @@ function pintarFiltros() {
   const equipos = filtroContinente && filtroContinente !== "__oferta"
     ? unicos(productos.filter(p => campo(p, "continente") === filtroContinente).map(p => campo(p, "equipo")))
     : [];
-  sub.hidden = equipos.length < 2;
+  document.getElementById("fila-sub").hidden = equipos.length < 2;
   sub.innerHTML = chip("", `Todo ${filtroContinente}`, filtroEquipo === "") +
     equipos.map(e => chip(e, e, filtroEquipo === e)).join("");
 }
@@ -106,7 +106,39 @@ function filtrar() {
   document.getElementById("mas-texto").textContent = `Mostrando ${visibles.length} de ${lista.length}`;
 }
 
-function aplicar() { limite = POR_PAGINA; pintarFiltros(); filtrar(); }
+function aplicar() { limite = POR_PAGINA; pintarFiltros(); filtrar(); actualizarFilas(); }
+
+/* FILAS DE FILTROS DESLIZABLES: flechas en computador, deslizar con el dedo en celular,
+   y la rueda del mouse también las mueve de lado. */
+const filas = [...document.querySelectorAll(".fila-filtros")];
+function actualizarFila(fila) {
+  const cinta = fila.querySelector(".filtros");
+  const hayIzq = cinta.scrollLeft > 2;
+  const hayDer = cinta.scrollLeft + cinta.clientWidth < cinta.scrollWidth - 2;
+  fila.classList.toggle("hay-izq", hayIzq);
+  fila.classList.toggle("hay-der", hayDer);
+  fila.querySelector(".flecha.izq").hidden = !hayIzq;
+  fila.querySelector(".flecha.der").hidden = !hayDer;
+}
+function actualizarFilas() {
+  filas.forEach(fila => {
+    const activo = fila.querySelector('.filtro[aria-pressed="true"]');
+    if (activo && !fila.hidden) activo.scrollIntoView({block: "nearest", inline: "nearest"});
+    actualizarFila(fila);
+  });
+}
+filas.forEach(fila => {
+  const cinta = fila.querySelector(".filtros");
+  cinta.addEventListener("scroll", () => actualizarFila(fila), {passive: true});
+  cinta.addEventListener("wheel", e => {
+    if (Math.abs(e.deltaY) <= Math.abs(e.deltaX) || cinta.scrollWidth <= cinta.clientWidth) return;
+    e.preventDefault();
+    cinta.scrollLeft += e.deltaY;
+  }, {passive: false});
+  fila.querySelector(".flecha.izq").addEventListener("click", () => cinta.scrollBy({left: -cinta.clientWidth * 0.7, behavior: "smooth"}));
+  fila.querySelector(".flecha.der").addEventListener("click", () => cinta.scrollBy({left: cinta.clientWidth * 0.7, behavior: "smooth"}));
+});
+addEventListener("resize", () => filas.forEach(actualizarFila));
 
 document.getElementById("filtros").addEventListener("click", e => {
   const b = e.target.closest(".filtro"); if (!b) return;
