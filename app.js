@@ -13,6 +13,25 @@ const esc = t => String(t ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt
 const FOTOS_BASE = "https://stla10miafotos.blob.core.windows.net/fotos/";
 const ruta = f => /^https?:/.test(f) ? f : FOTOS_BASE + encodeURIComponent(f);
 
+/* VERSIONES LIVIANAS: la función de Azure crea en el contenedor "web" dos versiones de cada foto:
+   <nombre>-600.webp (tarjetas) y <nombre>-1600.webp (vitrina y galería).
+   Si una versión todavía no existe, la página muestra la foto original. */
+const WEB_BASE = "https://stla10miafotos.blob.core.windows.net/web/";
+const originalDe = new Map();
+function version(url, tam) {
+  if (!url || !url.startsWith(FOTOS_BASE)) return url;
+  const nombre = decodeURIComponent(url.slice(FOTOS_BASE.length));
+  const liviana = WEB_BASE + encodeURIComponent(nombre.replace(/\.[^.]+$/, "") + "-" + tam + ".webp");
+  originalDe.set(liviana, url);
+  return liviana;
+}
+document.addEventListener("error", e => {
+  const img = e.target;
+  if (img.tagName !== "IMG") return;
+  const original = originalDe.get(img.src);
+  if (original && img.src !== original) img.src = original;
+}, true);
+
 /* DESCUENTOS: la columna "descuento" acepta 20 o 20%.
    El precio final se redondea a la centena más cercana. */
 function precios(p) {
@@ -35,7 +54,7 @@ function tarjeta(p) {
   const msg = encodeURIComponent(`Hola, me interesa: ${p.nombre} (${p.id})` + (valor ? ` por ${pesos.format(final)}` : ""));
   return `<article class="producto" data-precio="${esc(valor ? (pct ? pesos.format(final) + " · antes " + pesos.format(valor) : pesos.format(valor)) : "")}">
     <button class="ver-fotos" type="button" data-fotos="${esc(fotos.join("|"))}" aria-label="Ver fotos de ${esc(p.nombre)}">
-      <img src="${esc(fotos[0] || "")}" alt="${esc(p.nombre)}" loading="lazy" width="900" height="1200">
+      <img src="${esc(version(fotos[0] || "", 600))}" alt="${esc(p.nombre)}" loading="lazy" width="900" height="1200">
       ${pct ? `<span class="etiqueta-descuento">-${pct}%</span>` : ""}
       ${fotos.length > 1 ? `<span class="contador-fotos">${fotos.length} fotos</span>` : ""}
     </button>
@@ -235,7 +254,7 @@ function cargarVitrina(lista) {
     pedir: a.querySelector(".pedir")?.href || ""
   }));
   if (!fotos.length) return;
-  fotos.forEach(f => { new Image().src = f.src; });
+  fotos.forEach(f => { new Image().src = version(f.src, 1600); });
   actual = 0;
   mostrar(0, true);
   botonPausa.hidden = fotos.length < 2;
@@ -250,7 +269,7 @@ function mostrar(i, inmediato) {
   const f = fotos[i]; if (!f) return;
   const [a, b] = capas[0].classList.contains("activa") ? [capas[0], capas[1]] : [capas[1], capas[0]];
   const destino = inmediato ? a : b;
-  destino.src = f.src; destino.alt = f.alt;
+  destino.src = version(f.src, 1600); destino.alt = f.alt;
   if (!inmediato) {
     b.classList.add("activa"); b.removeAttribute("aria-hidden");
     a.classList.remove("activa"); a.setAttribute("aria-hidden", "true"); a.alt = "";
@@ -293,7 +312,7 @@ let galFotos = [], galIndice = 0;
 function galMostrar(i) {
   galIndice = (i + galFotos.length) % galFotos.length;
   galImg.classList.remove("zoom");
-  galImg.src = galFotos[galIndice];
+  galImg.src = version(galFotos[galIndice], 1600);
   galImg.alt = `${document.getElementById("gal-titulo").textContent}, foto ${galIndice + 1} de ${galFotos.length}`;
   document.getElementById("gal-contador").textContent = `Foto ${galIndice + 1} de ${galFotos.length}`;
   document.querySelectorAll("#gal-miniaturas button").forEach((b, j) => b.setAttribute("aria-current", j === galIndice));
@@ -308,7 +327,7 @@ function abrirGaleria(lista, titulo, pedir) {
   document.getElementById("gal-titulo").textContent = titulo;
   document.getElementById("gal-pedir").href = pedir || `https://wa.me/${WHATSAPP}`;
   document.getElementById("gal-miniaturas").innerHTML = galFotos.map((f, j) =>
-    `<button type="button" aria-label="Ver foto ${j + 1}"><img src="${esc(f)}" alt=""></button>`).join("");
+    `<button type="button" aria-label="Ver foto ${j + 1}"><img src="${esc(version(f, 600))}" alt=""></button>`).join("");
   document.querySelectorAll("#gal-miniaturas button").forEach((b, j) => b.addEventListener("click", () => galMostrar(j)));
   galMostrar(0);
   galeria.showModal();
