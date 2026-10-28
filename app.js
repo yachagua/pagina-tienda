@@ -31,7 +31,27 @@ document.addEventListener("error", e => {
   if (img.tagName !== "IMG") return;
   const original = originalDe.get(img.src);
   if (original && img.src !== original) img.src = original;
+  else if (img.closest(".mosaico")) img.style.visibility = "hidden";   /* foto de portada que no existe */
 }, true);
+
+/* MOSAICO DE LA PORTADA: fotos de la carpeta portada/ en Azure.
+   Agrega o quita nombres de esta lista si subes más fotos (respeta mayúsculas y la extensión exacta). */
+const FOTOS_PORTADA = ["portada/portada-1.jpeg", "portada/portada-2.jpeg", "portada/portada-3.jpeg", "portada/portada-4.jpeg", "portada/portada-5.jpeg"];
+(function armarMosaico() {
+  const mosaico = document.getElementById("mosaico");
+  if (!mosaico || !FOTOS_PORTADA.length) return;
+  const n = FOTOS_PORTADA.length, foto = k => version(ruta(FOTOS_PORTADA[k % n]), 600);
+  let columnas = "";
+  for (let i = 0; i < 12; i++) {
+    columnas += `<div class="mosaico-col${i % 2 ? " baja" : ""}">` +
+      [0, 2, 4, 1, 3].map(d => `<img src="${esc(foto(i + d))}" alt="" loading="eager" width="600" height="800">`).join("") + "</div>";
+  }
+  mosaico.innerHTML = columnas + columnas;   /* duplicado para que el desplazamiento no tenga cortes */
+  mosaico.querySelectorAll("img").forEach(img => {
+    if (img.complete && img.naturalWidth) img.classList.add("lista");
+    else img.addEventListener("load", () => img.classList.add("lista"));
+  });
+})();
 
 /* DESCUENTOS: la columna "descuento" acepta 20 o 20%.
    El precio final se redondea a la centena más cercana. */

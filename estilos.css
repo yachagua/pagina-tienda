@@ -1,6 +1,6 @@
 /* =====================================================================
    La 10mía · Diseño "Cineasta claro"
-   Fondo cálido y claro, portada con color en movimiento, letra Poppins.
+   Fondo cálido y claro, portada con mosaico de fotos en movimiento, letra Poppins.
    Colores de cine: azul petróleo y naranja teja.
    ===================================================================== */
 :root{
@@ -64,7 +64,17 @@ nav a:hover{background:rgba(23,25,28,.06)}
 @keyframes vagar1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(9vw,5vw) scale(1.15)}}
 @keyframes vagar2{0%,100%{transform:translate(0,0) scale(1.05)}50%{transform:translate(-8vw,6vw) scale(.9)}}
 @keyframes vagar3{0%,100%{transform:translate(0,0)}50%{transform:translate(-6vw,-5vw) scale(1.2)}}
-.portada-centro{position:relative;text-align:center;display:flex;flex-direction:column;align-items:center;gap:1.6rem}
+/* Mosaico de fotos detrás del título: filas inclinadas que se deslizan y un velo claro que las desvanece hacia el centro */
+.mosaico-portada{position:absolute;left:-12%;top:-14%;width:124%;height:128%;overflow:hidden;pointer-events:none}
+.mosaico{display:flex;width:max-content;gap:18px;padding-top:40px;transform:rotate(-6deg);animation:deriva 110s linear infinite}
+.mosaico-col{display:flex;flex-direction:column;gap:18px}
+.mosaico-col.baja{margin-top:-90px}
+.mosaico img{width:clamp(150px,16vw,230px);aspect-ratio:3/4;object-fit:cover;border-radius:20px;background:var(--arena);opacity:0;transition:opacity 1.2s ease}
+.mosaico img.lista{opacity:1}
+@keyframes deriva{from{transform:translateX(0) rotate(-6deg)}to{transform:translateX(-50%) rotate(-6deg)}}
+.velo{position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse 52% 58% at 50% 52%,rgba(244,241,236,.97) 0%,rgba(244,241,236,.9) 45%,rgba(244,241,236,.55) 75%,rgba(244,241,236,.25) 100%)}
+.portada-centro{position:relative;z-index:1;text-align:center;display:flex;flex-direction:column;align-items:center;gap:1.6rem}
 .chip{display:inline-flex;align-items:center;gap:.6rem;padding:.45rem 1rem;border-radius:999px;background:rgba(255,255,255,.6);border:1px solid rgba(23,25,28,.08);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
   font-size:.72rem;font-weight:700;letter-spacing:.24em;text-transform:uppercase;color:var(--petroleo)}
 .punto{width:8px;height:8px;border-radius:50%;background:var(--teja);animation:pulso 1.8s ease-out infinite}
@@ -255,6 +265,12 @@ footer a:hover{color:var(--petroleo)}
 .gal-btn[hidden]{display:none}
 
 /* ---------- Tableta ---------- */
+@media (max-width:1180px){
+  .portada{padding-top:calc(88px + 2.5rem)}
+  .mosaico img{width:clamp(110px,26vw,170px);border-radius:14px}
+  .mosaico,.mosaico-col{gap:12px}
+  .velo{background:radial-gradient(ellipse 75% 50% at 50% 50%,rgba(244,241,236,.96) 0%,rgba(244,241,236,.88) 55%,rgba(244,241,236,.6) 85%,rgba(244,241,236,.4) 100%)}
+}
 @media (max-width:960px){
   nav{display:none}
   .portada-cabeza{grid-template-columns:1fr;gap:1.4rem}
@@ -305,10 +321,13 @@ footer a:hover{color:var(--petroleo)}
 /* Respeta a quien prefiere menos movimiento */
 @media (prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}
-  .alineacion-cinta,.mancha,.punto,.brillo,.entra{animation:none}
+  .alineacion-cinta,.mancha,.punto,.brillo,.entra,.mosaico{animation:none}
   .js [data-aparece]{opacity:1;transform:none;filter:none;transition:none}
   .producto,.actos li{transition:none}
   .rejilla.entrando .producto{animation:none;opacity:1;transform:none}
   .ver-fotos img,.gal-escena img{transition:none}
   .ver-fotos:hover img{transform:none}
 }
+
+/* Botón secundario de la portada con fondo para leerse bien sobre el mosaico */
+.portada .boton-sec{background:rgba(255,255,255,.7);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}

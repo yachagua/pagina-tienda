@@ -81,7 +81,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500;1,600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="estilos.css?v=13">
+<link rel="stylesheet" href="estilos.css?v=16">
 </head>
 <body>
 
@@ -99,9 +99,12 @@
 </header>
 
 <main id="inicio">
-  <!-- PORTADA: sin fotos, con fondo de color en movimiento y el título entrando como en un tráiler. -->
+  <!-- PORTADA: mosaico de fotos en movimiento y el título entrando como en un tráiler. -->
   <section class="portada" id="portada" aria-labelledby="titulo-portada">
-    <div class="fondo-vivo" aria-hidden="true"><span class="mancha m1"></span><span class="mancha m2"></span><span class="mancha m3"></span></div>
+    <!-- MOSAICO DE FONDO: las fotos de la carpeta portada/ del contenedor "fotos" en Azure, deslizándose detrás del título.
+         Para cambiar o agregar fotos, edita la lista FOTOS_PORTADA al comienzo de app.js. -->
+    <div class="mosaico-portada" aria-hidden="true"><div class="mosaico" id="mosaico"></div></div>
+    <div class="velo" aria-hidden="true"></div>
     <div class="envolver portada-centro">
       <p class="chip entra e1"><span class="punto" aria-hidden="true"></span>YCA Importaciones presenta</p>
       <h1 id="titulo-portada"><span class="entra e2">Camisetas de fútbol</span> <span class="entra e3"><em class="brillo">en Medellín</em></span></h1>
@@ -301,6 +304,6 @@
 </dialog>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js" defer></script>
-<script src="app.js?v=13" defer></script>
+<script src="app.js?v=16" defer></script>
 </body>
 </html>
