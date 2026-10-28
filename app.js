@@ -31,12 +31,18 @@ document.addEventListener("error", e => {
   if (img.tagName !== "IMG") return;
   const original = originalDe.get(img.src);
   if (original && img.src !== original) img.src = original;
-  else if (img.closest(".mosaico")) img.style.visibility = "hidden";   /* foto de portada que no existe */
+  else if (img.closest(".mosaico")) {
+    /* Foto de portada que todavía no existe: se reemplaza por una de las primeras para no dejar huecos */
+    if (img.dataset.reemplazo) { img.style.visibility = "hidden"; return; }
+    img.dataset.reemplazo = "1";
+    img.src = version(ruta(FOTOS_PORTADA[Math.floor(Math.random() * Math.min(5, FOTOS_PORTADA.length))]), 600);
+  }
 }, true);
 
 /* MOSAICO DE LA PORTADA: fotos de la carpeta portada/ en Azure.
    Agrega o quita nombres de esta lista si subes más fotos (respeta mayúsculas y la extensión exacta). */
-const FOTOS_PORTADA = ["portada/portada-1.jpeg", "portada/portada-2.jpeg", "portada/portada-3.jpeg", "portada/portada-4.jpeg", "portada/portada-5.jpeg"];
+const FOTOS_PORTADA = ["portada/portada-1.jpeg", "portada/portada-2.jpeg", "portada/portada-3.jpeg", "portada/portada-4.jpeg",
+  "portada/portada-5.jpeg", "portada/portada-6.jpeg", "portada/portada-7.jpeg", "portada/portada-8.jpeg"];
 (function armarMosaico() {
   const mosaico = document.getElementById("mosaico");
   if (!mosaico || !FOTOS_PORTADA.length) return;
@@ -44,7 +50,7 @@ const FOTOS_PORTADA = ["portada/portada-1.jpeg", "portada/portada-2.jpeg", "port
   let columnas = "";
   for (let i = 0; i < 12; i++) {
     columnas += `<div class="mosaico-col${i % 2 ? " baja" : ""}">` +
-      [0, 2, 4, 1, 3].map(d => `<img src="${esc(foto(i + d))}" alt="" loading="eager" width="600" height="800">`).join("") + "</div>";
+      [0, 3, 6, 1, 4].map(d => `<img src="${esc(foto(i + d))}" alt="" loading="eager" width="600" height="800">`).join("") + "</div>";
   }
   mosaico.innerHTML = columnas + columnas;   /* duplicado para que el desplazamiento no tenga cortes */
   mosaico.querySelectorAll("img").forEach(img => {
