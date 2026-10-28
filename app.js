@@ -11,7 +11,8 @@ const esc = t => String(t ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt
 /* FOTOS EN AZURE BLOB STORAGE
    Todas las fotos se buscan en este contenedor. En la hoja basta con escribir el nombre del archivo. */
 const FOTOS_BASE = "https://stla10miafotos.blob.core.windows.net/fotos/";
-const ruta = f => /^https?:/.test(f) ? f : FOTOS_BASE + encodeURIComponent(f);
+const rutaSegura = n => n.split("/").map(encodeURIComponent).join("/");
+const ruta = f => /^https?:/.test(f) ? f : FOTOS_BASE + rutaSegura(f);
 
 /* VERSIONES LIVIANAS: la función de Azure crea en el contenedor "web" dos versiones de cada foto:
    <nombre>-600.webp (tarjetas) y <nombre>-1600.webp (vitrina y galería).
@@ -21,7 +22,7 @@ const originalDe = new Map();
 function version(url, tam) {
   if (!url || !url.startsWith(FOTOS_BASE)) return url;
   const nombre = decodeURIComponent(url.slice(FOTOS_BASE.length));
-  const liviana = WEB_BASE + encodeURIComponent(nombre.replace(/\.[^.]+$/, "") + "-" + tam + ".webp");
+  const liviana = WEB_BASE + rutaSegura(nombre.replace(/\.[^.]+$/, "") + "-" + tam + ".webp");
   originalDe.set(liviana, url);
   return liviana;
 }
@@ -142,7 +143,13 @@ function actualizarFila(fila) {
 function actualizarFilas() {
   filas.forEach(fila => {
     const activo = fila.querySelector('.filtro[aria-pressed="true"]');
-    if (activo && !fila.hidden) activo.scrollIntoView({block: "nearest", inline: "nearest"});
+    /* Mueve solo la fila de filtros (no la página) para que el filtro activo quede visible */
+    if (activo && !fila.hidden) {
+      const cinta = fila.querySelector(".filtros");
+      const izq = activo.offsetLeft - cinta.offsetLeft, der = izq + activo.offsetWidth;
+      if (izq < cinta.scrollLeft) cinta.scrollLeft = izq - 8;
+      else if (der > cinta.scrollLeft + cinta.clientWidth) cinta.scrollLeft = der - cinta.clientWidth + 8;
+    }
     actualizarFila(fila);
   });
 }
@@ -202,9 +209,40 @@ function datosVitrina(p) {
   const msg = encodeURIComponent(`Hola, me interesa: ${p.nombre} (${p.id})` + (valor ? ` por ${pesos.format(final)}` : ""));
   return {
     src: fotos[0] || "", alt: p.nombre, nombre: p.nombre,
+    info: [p.marca, p.tipo].map(x => String(x ?? "").trim()).filter(Boolean).join(" · "),
     precio: valor ? (pct ? pesos.format(final) + " · antes " + pesos.format(valor) : pesos.format(valor)) : "",
     galeria: fotos.join("|"), pedir: `https://wa.me/${WHATSAPP}?text=${msg}`
   };
+}
+
+/* BANNER DE LA PORTADA (vitrina de museo)
+   Pega aquí el enlace CSV de la pestaña "banner" de tu hoja (Archivo > Compartir > Publicar en la web,
+   elige la pestaña "banner" y el formato CSV). Columnas: activo, imagen, titulo, detalle, precio, id.
+   Las fotos van en la carpeta banner/ del contenedor "fotos" en Azure; en "imagen" basta el nombre del archivo.
+   Si lo dejas vacío, la portada usa las camisetas destacadas del catálogo. */
+const BANNER_URL = "";
+let bannerPropio = false;
+
+function datosBanner(b) {
+  const archivo = campo(b, "imagen");
+  const src = ruta(/^https?:|\//.test(archivo) ? archivo : "banner/" + archivo);
+  const valor = Number(campo(b, "precio").replace(/[^\d]/g, ""));
+  const titulo = campo(b, "titulo") || "La 10mía";
+  const msg = encodeURIComponent(`Hola, me interesa: ${titulo}` + (campo(b, "id") ? ` (${campo(b, "id")})` : ""));
+  return {src, alt: titulo, nombre: titulo, info: campo(b, "detalle"),
+    precio: valor ? pesos.format(valor) : "", galeria: src, pedir: `https://wa.me/${WHATSAPP}?text=${msg}`};
+}
+
+if (BANNER_URL) {
+  Papa.parse(BANNER_URL, {
+    download: true, header: true, skipEmptyLines: true,
+    complete: ({data}) => {
+      const filas = data.filter(b => campo(b, "activo").toLowerCase() === "si" && campo(b, "imagen"));
+      if (!filas.length) return;
+      bannerPropio = true;
+      cargarVitrina(filas.map(datosBanner));
+    }
+  });
 }
 
 if (CATALOGO_URL) {
@@ -215,21 +253,26 @@ if (CATALOGO_URL) {
       if (!productos.length) return;
       buscadorEl.hidden = false;
       aplicar();
+      animarEntrada();
+      llenarAlineacion();
       /* Vitrina en orden aleatorio cada vez que se abre la página:
          si marcaste destacados, rota todos ellos mezclados;
          si no, elige 8 camisetas al azar de todo el catálogo. */
       const destacados = productos.filter(p => campo(p, "destacado").toLowerCase() === "si");
       const seleccion = destacados.length ? mezclar(destacados) : mezclar(productos).slice(0, VITRINA_MAX);
-      cargarVitrina(seleccion.map(datosVitrina));
+      if (!bannerPropio) cargarVitrina(seleccion.map(datosVitrina));
     }
   });
 }
 
 /* VITRINA DEL BANNER: rota las camisetas del catálogo con fundido y acercamiento lento.
    Cambia SEGUNDOS para ajustar la velocidad. */
-const SEGUNDOS = 3;
+const SEGUNDOS = 4;
 const vitrina = document.getElementById("vitrina");
 const capas = vitrina.querySelectorAll(".capa");
+const escaparate = document.getElementById("escaparate");
+const placaInfo = document.getElementById("placa-info");
+const tunelPortada = document.getElementById("tunel");
 const leyenda = document.getElementById("leyenda");
 const contador = document.getElementById("contador");
 const rotuloPrecio = document.getElementById("rotulo-precio");
@@ -267,17 +310,19 @@ function reiniciarAnimacion(el, clase) {
 
 function mostrar(i, inmediato) {
   const f = fotos[i]; if (!f) return;
-  const [a, b] = capas[0].classList.contains("activa") ? [capas[0], capas[1]] : [capas[1], capas[0]];
-  const destino = inmediato ? a : b;
-  destino.src = version(f.src, 1600); destino.alt = f.alt;
-  if (!inmediato) {
-    b.classList.add("activa"); b.removeAttribute("aria-hidden");
-    a.classList.remove("activa"); a.setAttribute("aria-hidden", "true"); a.alt = "";
-  }
-  if (!sinMovimiento) reiniciarAnimacion(destino, "kb");
-  contador.textContent = `${dosDigitos(i + 1)} / ${dosDigitos(fotos.length)}`;
-  leyenda.textContent = f.nombre;
-  rotuloPrecio.textContent = f.precio;
+  const foto = capas[0];
+  const aplicar = () => {
+    foto.src = version(f.src, 1600); foto.alt = f.alt;
+    contador.textContent = `Pieza ${dosDigitos(i + 1)} / ${dosDigitos(fotos.length)}`;
+    leyenda.textContent = f.nombre;
+    placaInfo.textContent = f.info || "";
+    rotuloPrecio.textContent = f.precio;
+    if (!sinMovimiento) reiniciarAnimacion(foto, "kb");
+  };
+  if (inmediato || sinMovimiento) { aplicar(); programar(); return; }
+  /* La luz baja, cambia la pieza y vuelve a encenderse */
+  escaparate.classList.add("apagado"); tunelPortada.classList.add("cambiando");
+  setTimeout(() => { aplicar(); escaparate.classList.remove("apagado"); tunelPortada.classList.remove("cambiando"); }, 600);
   programar();
 }
 
@@ -291,6 +336,7 @@ function programar() {
 
 function pintarPausa() {
   vitrina.classList.toggle("pausado", pausado);
+  tunelPortada.classList.toggle("pausado", pausado);
   botonPausa.setAttribute("aria-label", pausado ? "Reanudar las fotos" : "Pausar las fotos");
   botonPausa.innerHTML = pausado ? ICONO_PLAY : ICONO_PAUSA;
 }
@@ -368,3 +414,43 @@ galImg.addEventListener("touchend", e => {
   if (Math.abs(d) > 50) galMostrar(galIndice + (d < 0 ? 1 : -1));
   toqueX = null;
 });
+
+
+/* =====================================================================
+   DISEÑO "SALIDA DEL TÚNEL": efectos de la portada
+   ===================================================================== */
+const tunel = document.getElementById("tunel");
+const cabeceraFija = document.getElementById("cabecera");
+const menosMovimiento = matchMedia("(prefers-reduced-motion: reduce)").matches;
+let esperandoCuadro = false;
+
+/* Al bajar, el túnel se abre: --p va de 0 (arriba) a 1 (fin de la portada) */
+function alBajar() {
+  esperandoCuadro = false;
+  const alto = tunel.offsetHeight || innerHeight;
+  const p = Math.min(1, Math.max(0, scrollY / (alto * 0.8)));
+  if (!menosMovimiento) tunel.style.setProperty("--p", p.toFixed(3));
+  cabeceraFija.classList.toggle("solido", scrollY > 40);
+}
+addEventListener("scroll", () => {
+  if (!esperandoCuadro) { esperandoCuadro = true; requestAnimationFrame(alBajar); }
+}, {passive: true});
+alBajar();
+
+/* Las camisetas entran una tras otra la primera vez que carga el catálogo */
+function animarEntrada() {
+  if (menosMovimiento) return;
+  [...rejilla.children].forEach((el, i) => el.style.setProperty("--i", i));
+  rejilla.classList.add("entrando");
+  setTimeout(() => rejilla.classList.remove("entrando"), 1800);
+}
+
+/* La alineación: los equipos del catálogo pasando bajo la portada */
+function llenarAlineacion() {
+  const equipos = unicos(productos.map(p => campo(p, "equipo")));
+  if (equipos.length < 4) return;
+  const cinta = document.getElementById("alineacion-cinta");
+  const fila = equipos.map(e => `<span>${esc(e)}</span>`).join("");
+  cinta.innerHTML = fila + fila;   /* duplicado para que el desfile no tenga cortes */
+  document.getElementById("alineacion").hidden = false;
+}
